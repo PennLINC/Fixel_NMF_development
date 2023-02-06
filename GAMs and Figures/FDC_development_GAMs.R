@@ -1,7 +1,7 @@
 #This script is testing the development of white matter covariance networks in terms of Fiber density and cross-section (FDC) metric
 #using Generelized Additive Models (GAMs). All GAMs include sex, mean DWI framewise displacement and number of DWI bad slices 
 #(index of scan quality) as covariates. Included at the end of the script are sensitivity analyses in which we controlled 
-#for Total Brain Volume. 
+#for Total Brain Volume and maternal education, respectively. 
 
 ########################
 #### LOAD LIBRARIES ####
@@ -96,7 +96,7 @@ df_fdc <- df_fdc %>%
 ### FINAL SAMPLE FOR GAMs  IS N=939 (LOST N=2 DUE TO MISSING COGNITIVE DATA) ###
   
 #List components' name
-bundles <- c("Splenium","Fornix, cingulum","Inf. CST","Int. capsule","SLF","Body of the CC","Rostrum","Sup. CST","Uncinate","SLF (parietal)","Middle CP",
+bundles <- c("Splenium","Fornix, cingulum","Inf. CST","Int. capsule","SLF, arcuate","Body of the CC","Rostrum","Sup. CST","Uncinate","SLF (parietal)","Middle CP",
            "Vermis","Sup. Cerebellum","U-fibers")
 bundles <- as.data.frame(bundles)
 
@@ -141,7 +141,7 @@ models_age_fdc <- lapply(gamModels_age_fdc, summary)
 fstat_age_fdc <- sapply(gamModels_age_fdc, function(v) summary(v)$s.table[3])
 fstat_age_fdc <- as.data.frame(fstat_age_fdc)
 
-#Pull p-values - 
+#Pull age p-values 
 p_age_fdc <- sapply(gamModels_age_fdc, function(v) summary(v)$s.table[4])
 p_age_fdc <- as.data.frame(p_age_fdc)
 p_age_fdc <- round(p_age_fdc,3)
@@ -203,16 +203,11 @@ age_gam <- cbind(age_gam,partialR2)
 age_gam$partial_R2 <- as.numeric(as.character(age_gam$partial_R2))
 age_gam <- age_gam[order(-age_gam$partial_R2),]
 
-# JB - write age gam results to csv
-age_gam$nmf_networks <- rownames(age_gam)
-write.csv(age_gam, "./fixels_to_bundles/nmf_age_results/gam_age_nmf.csv", row.names = FALSE)
-
 ########################################################################
 #### FIGURE 3B - BAR PLOT OF PARTIAL R2 FOR EACH COVARIANCE NETWORK ####
 ########################################################################
 # path to save figures at
-# root <- "/Users/jbourque/UPENN/projects/PNC_fixel/gam_analysis/"
-root <- "/Users/joelleba/PennLINC/fixel_NMF_development/"
+root <- "path/to/project"
 
 #First find colors similar to Figure 2 which depicts the 14 covariance networks on the brain
 # Define the color ramp (returns a function object)
@@ -243,7 +238,7 @@ age_gam$bundles <- factor(age_gam$bundles, levels = age_gam$bundles)
 figure3b <- ggplot(age_gam, aes(x=bundles, y=partial_R2, fill=bundles)) + 
   geom_bar(stat="identity") + 
   scale_fill_manual("Processing Method", values = c("Body of the CC" = "#F77F85", 
-                                                    "SLF" = "#008B45", 
+                                                    "SLF, arcuate" = "#008B45", 
                                                     "Splenium" = "#EE3B3B", 
                                                     "Fornix, cingulum" = "#42DFCE", 
                                                     "Sup. CST" = "#9CB9F5", 
@@ -292,7 +287,7 @@ NullModel_NMFpredictage_summary <- summary(NullModel_NMFpredictage)
 NMF_only_predict_age_summary <- summary(NMF_only_predict_age)
 Fullmodel_NMFpredictage_summary
 NullModel_NMFpredictage_summary
-NMF_only_predict_age_summary # proportion of variance (R2) explained by age
+NMF_only_predict_age_summary # proportion of variance (R2) explained by networks
 
 #1.Compare Fullmodel and Nullmodel with an F test to test significant contribution of networks in predicting age
 Ftest <- anova(Fullmodel_NMFpredictage, NullModel_NMFpredictage)
@@ -330,16 +325,10 @@ ggsave(plot = figure3c, filename = paste0(root, "figures/Figure3C_NMF_predicted_
 
 # set plot font size
 this_font_size = 50
-# library(gratia)
-# library(dplyr)
-# library(svglite)
-# library(cowplot)
-# library(scales)
 
 # apply scatterplot and barplot functions to models
 source(paste0(root, "/GAMs and Figures/plotting_functions.R"))
 dev_plots_list <- lapply(X = gamModels_age_fdc, FUN = resid_plot, term = "Age", add.intercept = TRUE)
-# dev_plots_list_orig <- lapply(X = gamModels_age_fdc, FUN = orig_plot)
 bar_plots_list <- lapply(X = gamModels_age_fdc, FUN = get_derivs_and_plot, smooth_var = "s(Age)")
 
 # combine scatter plots and bar plots, save to pdf
@@ -354,27 +343,6 @@ final_plots <- lapply(seq_along(dev_plots_list),
 
        }
     )
-
-# ggsave(plot = dev_plots_list[[1]], filename = paste0(root, "orig_plot.pdf"),
-#        device = "pdf", width = 320, height = 290, units = "mm")
-
-# JB - save age derivatives df
-get_derivs <- function(modobj,smooth_var){
-  # get derivatives (with gratia package)
-  derv <- derivatives(modobj, term = smooth_var)
-  derv <- derv %>%
-    mutate(sig = !(0 >lower & 0 < upper))
-  derv$sig_deriv <- derv$derivative*derv$sig
-  
-  # append derivatives to dataframe (JB)
-  derv$NMF_networks <- all.vars(modobj$formula)[1] # get NMF name
-  return(derv)
-  
-} 
-
-age_dervs_list <- lapply(gamModels_age_fdc, get_derivs)
-df_age_dervs <- do.call("rbind", age_dervs_list)
-write.csv(df_age_dervs, "./fixels_to_bundles/nmf_age_results/nmf_gam_age_derivatives.csv")
 
 ################################
 #### SUPPLEMENTARY ANALYSES ####
@@ -395,7 +363,7 @@ models_age_fdc_TBV <- lapply(gamModels_age_fdc_TBV, summary)
 fstat_fdc_TBV <- sapply(gamModels_age_fdc_TBV, function(v) summary(v)$s.table[3])
 fstat_fdc_TBV <- as.data.frame(fstat_fdc_TBV)
 
-#Pull p-values - 
+#Pull p-values  
 p_age_fdc_TBV <- sapply(gamModels_age_fdc_TBV, function(v) summary(v)$s.table[4])
 p_age_fdc_TBV <- as.data.frame(p_age_fdc_TBV)
 p_age_fdc_TBV <- round(p_age_fdc_TBV,3)
@@ -450,7 +418,7 @@ figureS3A <- ggplot(age_gam_TBV, aes(x = bundles, y = partialR2, fill = bundles)
   geom_bar(stat = "identity") + 
   scale_fill_manual("Processing Method", 
                     values = c("Body of the CC" = "#F77F85", 
-                               "SLF" = "#008B45", 
+                               "SLF, arcuate" = "#008B45", 
                                "Splenium" = "#EE3B3B", 
                                "Fornix, cingulum" = "#4169E1", 
                                "Sup. CST" = "#9CB9F5", 
@@ -552,7 +520,7 @@ age_gam_ME$bundles <- factor(age_gam_ME$bundles, levels = age_gam_ME$bundles)
 figureS3B <- ggplot(age_gam_ME, aes(x = bundles, y = partialR2, fill = bundles)) + 
   geom_bar(stat="identity") + scale_fill_manual("Processing Method", 
                                                 values = c("Body of the CC" = "#F77F85", 
-                                                           "SLF" = "#008B45", 
+                                                           "SLF, arcuate" = "#008B45", 
                                                            "Splenium" = "#EE3B3B", 
                                                            "Fornix, cingulum" = "#4169E1", 
                                                            "Sup. CST" = "#9CB9F5", 

@@ -49,7 +49,7 @@ colors_df <- data.frame(nmf_names, nmf_full_names, line_colors)
 
 ##########################################################################
 ### Developmental scatterplots for each of the 14 covariance networks ####
-# This is Bart Larsen's plotting function, adapted to show partial residuals
+# This is based on Bart Larsen's plotting function, adapted to show partial residuals
 # Inputs: 
 #   - modobj: model object (should work for lm and gam)
 #   - term: the term you want to plot (as a string, e.g. “Age”)
@@ -97,8 +97,6 @@ resid_plot <- function(modobj,term,add.intercept=FALSE){
   nmf_network <- all.vars(modobj$formula)[1]
   line_color <- colors_df[which(colors_df$nmf_names == nmf_network), "line_colors"]
 
-  
-  
   # adapted plot for paper figure aesthetics
   p <- ggplot(plot.df, aes_string(x = "rawdata", y = term)) +
     geom_point(size = 2, colour = "gray56") +
@@ -140,50 +138,17 @@ resid_plot <- function(modobj,term,add.intercept=FALSE){
   return(p)
 }
 
-# This part of the code is from Adam Pines (https://github.com/PennBBL/multishell_diffusion/blob/master/PostProc/multishell_analyses.Rmd)
-# input: redmodel, which is a list of 14 reduced model fits (1 model per network) that do not contain the age smooth term, s(age). 
-orig_plot <- function(redmodel){ 
-  nmf_network <- all.vars(redmodel$formula)[1]
-  line_color <- colors_df[which(colors_df$nmf_names == nmf_network), "line_colors"]
-  # df_fdc$resid_var <- redmodel$residuals + mean(df_fdc[,nmf_network]) # Extract residuals for plotting - based on Adam Pines code at link above
-  
-  p <- ggplot(df_fdc, aes(x = Age, y = df_fdc[,nmf_network])) + 
-    scale_y_continuous(breaks = seq(30, 150, by = 10)) +
-    geom_point(size = 2, colour = "gray56") + 
-    geom_smooth(method = 'gam', formula = y ~ s(x, k = 4), colour = line_color, fill = line_color, alpha = .8) +
-    labs(x = "Age (years)", y = "FDC", title = toString(colors_df[which(colors_df$nmf_names == nmf_network), "nmf_full_names"])) +
-    theme(text = element_text(size = this_font_size),
-          axis.text = element_text(size = this_font_size),
-          # axis.title.y = element_text(size = this_font_size, margin = margin(t = 0, r = 39, b = 0, l = 0)),
-          axis.title = element_blank(),
-          axis.text.x = element_blank(),
-          axis.ticks.x = element_blank(),
-          # legend.text = element_text(size = this_font_size),
-          # legend.title = element_text(size = this_font_size),
-          panel.grid.major = element_blank(),
-          panel.grid.minor = element_blank(),
-          panel.background = element_rect(fill = "transparent", colour = NA),
-          plot.background = element_rect(fill = "transparent", colour = NA),
-          plot.margin = unit(c(0.2,0.2,0,1), "cm"),
-          axis.line.x = element_line(colour = 'gray20', size = 2), 
-          axis.line.y = element_line(colour = 'gray20', size = 2), 
-          axis.ticks.length = unit(.25, "cm"),
-          plot.title = element_text(face = "bold", hjust = 0.5, margin = margin(b = 30)) # centered title
-    )  #Top, left, Bottom, right
-  return(p)
-}
-
 ##########################################################################
 #### compute derivatives and generate rate of change bars for all 14 networks ####
 get_derivs_and_plot <- function(modobj, smooth_var, low_color = NULL, hi_color = NULL){
   nmf_network <- all.vars(modobj$formula)[1]
   
   # get model derivatives
-  derv <- derivatives(modobj, term = smooth_var)
+  derv <- derivatives(modobj, term = smooth_var, interval = "simultaneous", unconditional = F)
   
   # add significance variable (true or false)
   derv <- derv %>%
-    mutate(sig = !(0 > lower & 0 < upper))
+    mutate(sig = !(0 > lower & 0 < upper)) #derivative is sig if the lower CI is not < 0 while the upper CI is > 0 (i.e., when the CI does not include 0)
   # new variable with only significant derivatives (non-sig. ones are set to 0)
   derv$sig_deriv = derv$derivative * derv$sig
   

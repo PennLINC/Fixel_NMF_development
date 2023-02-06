@@ -1,8 +1,8 @@
-#This script is investigating whether white matter microstructure (FDC) underlies improvement in executive functioning
-#using Generelized Additive Models (GAMs). We used 2 factors for to describe executive functioning performance: Executive 
-#Efficiency and Executive and Complex Reasoning Accuracy. All GAMs include sex, mean DWI framewise displacement and number of 
-#DWI bad slices (index of scan quality) as covariates. Included at the end of the script are sensitivity analyses in which we 
-#controlled for Total Brain Volume. 
+# This script is investigating whether white matter microstructure (FDC) underlies differences in executive function
+# using Generelized Additive Models (GAMs). We used the Executive Efficiency factor to describe executive function performance. 
+# All GAMs include sex, mean DWI framewise displacement and number of 
+# DWI bad slices (index of scan quality) as covariates. Included at the end of the script are sensitivity analyses in which we 
+# we controlled for Total Brain Volume and maternal education, respectively. 
 
 ######################
 #### READ IN DATA ####
@@ -11,7 +11,6 @@ source("./GAMs and Figures/FDC_development_GAMs.R")
 
 # path to save figures at
 root <- "/path/to/project/" 
-
 
 ########################
 #### VISUALIZE DATA ####  ##Can skip this section##
@@ -27,19 +26,13 @@ plot_EE
 #######################################################
 #### BUILD GAM MODELS - EXECUTIVE FUNCTION EFFECTS ####
 #######################################################
-#1.Executive Efficiency 
+# Executive Efficiency GAMs
 gamModels_EE <- lapply(Components, function(x) {
   gam(substitute(i ~ s(Age) + F3_Executive_Efficiency + oSex + raw_num_bad_slices + mean_fd, list(i = as.name(x))), method="REML", data = df_fdc)
 })
 
-#2.Executive & Complex Reasoning Accuracy
-gamModels_ECRA <- lapply(Components, function(x) {
-  gam(substitute(i ~ s(Age) + F1_Exec_Comp_Res_Accuracy + oSex + raw_num_bad_slices + mean_fd, list(i = as.name(x))), method="REML", data = df_fdc)
-})
-
 #Look at model summaries
 models_EE <- lapply(gamModels_EE, summary)
-models_ECRA<-lapply(gamModels_ECRA, summary)
 models_EE[[1]]
 
 #Pull t-values and p-values
@@ -51,23 +44,13 @@ cog_pvalue_EE <- round(cog_pvalue_EE,3)
 cog_pvalue_EE_fdr <- as.data.frame(p.adjust(cog_pvalue_EE[,1], method="fdr"))
 cog_pvalue_EE_fdr <- round(cog_pvalue_EE_fdr,3)
 
-cog_tvalue_ECRA <- sapply(gamModels_ECRA, function(v) summary(v)$p.table[2,3])
-cog_tvalue_ECRA <- as.data.frame(cog_tvalue_ECRA)
-cog_pvalue_ECRA <- sapply(gamModels_ECRA, function(v) summary(v)$p.table[2,4])
-cog_pvalue_ECRA <- as.data.frame(cog_pvalue_ECRA)
-cog_pvalue_ECRA <- round(cog_pvalue_ECRA,3)
-cog_pvalue_ECRA_fdr <- as.data.frame(p.adjust(cog_pvalue_ECRA[,1], method="fdr"))
-cog_pvalue_ECRA_fdr <- round(cog_pvalue_ECRA_fdr,3)
-
-cog_stats<-cbind(bundles,cog_tvalue_EE,cog_pvalue_EE_fdr,cog_tvalue_ECRA,cog_pvalue_ECRA_fdr)
+cog_stats<-cbind(bundles,cog_tvalue_EE,cog_pvalue_EE_fdr)
 cog_stats<-cog_stats%>%
   dplyr::rename(t_EE=cog_tvalue_EE)%>%
-  dplyr::rename(p_fdr_EE=`p.adjust(cog_pvalue_EE[, 1], method = "fdr")`) %>%
-  dplyr::rename(t_ECRA=cog_tvalue_ECRA)%>%
-  dplyr::rename(p_fdr_ECRA=`p.adjust(cog_pvalue_ECRA[, 1], method = "fdr")`)
+  dplyr::rename(p_fdr_EE=`p.adjust(cog_pvalue_EE[, 1], method = "fdr")`)
 
 #Pull Partial R2
-df_fdc_cog_min<-df_fdc %>% #no missing data here on any variable, thus can use df_fdc_min data for reduced model testing
+df_fdc_cog_min <- df_fdc %>% #no missing data here on any variable, thus can use df_fdc_min data for reduced model testing
   dplyr::select(V1,V2,V3,V4,V5,V6,V7,V8,V9,V10,V11,V12,V13,V14,Age,oSex,mean_fd,raw_num_bad_slices,TBV,F1_Exec_Comp_Res_Accuracy,
                 F3_Executive_Efficiency)
 count(df_fdc_cog_min[rowSums(is.na(df_fdc_cog_min))==0,])
@@ -98,30 +81,8 @@ partialR2_EE<-as.data.frame(t(partialR2_EE))
 partialR2_EE<-partialR2_EE %>%
   dplyr::rename(partialR2_EE=V1)
 
-partialR2_ECRA_V1 <- partialRsq(gamModels_ECRA[[1]],redmodel_cog[[1]])
-partialR2_ECRA_V2 <- partialRsq(gamModels_ECRA[[2]],redmodel_cog[[2]])
-partialR2_ECRA_V3 <- partialRsq(gamModels_ECRA[[3]],redmodel_cog[[3]])
-partialR2_ECRA_V4 <- partialRsq(gamModels_ECRA[[4]],redmodel_cog[[4]])
-partialR2_ECRA_V5 <- partialRsq(gamModels_ECRA[[5]],redmodel_cog[[5]])
-partialR2_ECRA_V6 <- partialRsq(gamModels_ECRA[[6]],redmodel_cog[[6]])
-partialR2_ECRA_V7 <- partialRsq(gamModels_ECRA[[7]],redmodel_cog[[7]])
-partialR2_ECRA_V8 <- partialRsq(gamModels_ECRA[[8]],redmodel_cog[[8]])
-partialR2_ECRA_V9 <- partialRsq(gamModels_ECRA[[9]],redmodel_cog[[9]])
-partialR2_ECRA_V10 <- partialRsq(gamModels_ECRA[[10]],redmodel_cog[[10]])
-partialR2_ECRA_V11 <- partialRsq(gamModels_ECRA[[11]],redmodel_cog[[11]])
-partialR2_ECRA_V12 <- partialRsq(gamModels_ECRA[[12]],redmodel_cog[[12]])
-partialR2_ECRA_V13 <- partialRsq(gamModels_ECRA[[13]],redmodel_cog[[13]])
-partialR2_ECRA_V14 <- partialRsq(gamModels_ECRA[[14]],redmodel_cog[[14]])
-
-partialR2_ECRA<-as.data.frame(cbind(partialR2_ECRA_V1[[1]],partialR2_ECRA_V2[[1]],partialR2_ECRA_V3[[1]],partialR2_ECRA_V4[[1]],partialR2_ECRA_V5[[1]],
-                                  partialR2_ECRA_V6[[1]],partialR2_ECRA_V7[[1]],partialR2_ECRA_V8[[1]],partialR2_ECRA_V9[[1]],partialR2_ECRA_V10[[1]],
-                                  partialR2_ECRA_V11[[1]],partialR2_ECRA_V12[[1]],partialR2_ECRA_V13[[1]],partialR2_ECRA_V14[[1]]))
-partialR2_ECRA<-as.data.frame(t(partialR2_ECRA))
-partialR2_ECRA<-partialR2_ECRA %>%
-  dplyr::rename(partialR2_ECRA=V1)
-
-#Join Partial R2 with t-stats and fdr p-values for both EE and ECRA
-cog_stats<-cbind(cog_stats,partialR2_EE,partialR2_ECRA)
+#Join Partial R2 with t-stats and fdr p-values 
+cog_stats<-cbind(cog_stats,partialR2_EE)
 cog_stats$partialR2_EE<-as.numeric(as.character(cog_stats$partialR2_EE))
 cog_stats<-cog_stats[order(-cog_stats$partialR2_EE),]
 
@@ -131,9 +92,9 @@ cog_stats<-cog_stats[order(-cog_stats$partialR2_EE),]
 #Considering very similar results between EE and ECRA, in the paper we only presents results pertaining to the EE analysis (in Figure 5)
 library(ggplot2)
 cog_stats$bundles <- factor(cog_stats$bundles, levels = cog_stats$bundles)
-figure5b<-ggplot(cog_stats, aes(x=bundles, y=partialR2_EE, fill=bundles)) + 
+figure5b <- ggplot(cog_stats, aes(x=bundles, y=partialR2_EE, fill=bundles)) + 
   geom_bar(stat="identity") + scale_fill_manual("Processing Method", values = c("Body of the CC" = "#F77F85", 
-                                                                                "SLF" = "#008B45", 
+                                                                                "SLF, arcuate" = "#008B45", 
                                                                                 "Splenium" = "#EE3B3B", 
                                                                                 "Fornix, cingulum" = "#42DFCE", # "#4169E1", 
                                                                                 "Sup. CST" = "#9CB9F5", 
@@ -168,11 +129,11 @@ ggsave(plot = figure5b,filename = paste0(root, "figures/Figure5B_bargraph_partia
 ########################################################
 #### COVARIANCE NETWORKS PREDICT EXECUTIVE FUNCTION ####
 ########################################################
-#Full model: EE or ECRA ~ Age + sex + scan quality + motion + covariance networks 
-#Null model: EE or ECRA ~ Age + sex + scan quality + motion
+#Full model: EE ~ Age + sex + scan quality + motion + covariance networks 
+#Null model: EE ~ Age + sex + scan quality + motion
 #Ftest to test the significant contribution of covariance networks
 
-#1.Full and Null Models for Executive Efficiency
+# Full and Null Models for Executive Efficiency
 FullModel_pred_EE <- lm(F3_Executive_Efficiency ~ Age + oSex + raw_num_bad_slices + mean_fd + V1 + V2 + V3 + V4 + V5 + V6 + V7 + V8 + V9 + V10 + V11 + V12 + V13 + V14,
                    data = df_fdc)
 
@@ -188,36 +149,13 @@ Full_pred_EE_summary
 Null_pred_EE_summary
 NMF_only_predict_EE_summary
 
-#1a.Compare Fullmodel and Nullmodel with an F test to test significant contribution of networks in predicting EE
+# a.Compare Fullmodel and Nullmodel with an F test to test significant contribution of networks in predicting EE
 Ftest_EE <- anova(FullModel_pred_EE, NullModel_pred_EE)
 Ftest_EE # significant contribution of the covariance networks in predicting EE
 
-#1b.Correlation between actual EE and predicted EE by NMF_only_predict_EE model
+# b.Correlation between actual EE and predicted EE by NMF_only_predict_EE model
 NMF_EE_Cor <- cor.test(predict(NMF_only_predict_EE), df_fdc$F3_Executive_Efficiency)
 NMF_EE_Cor #the r value will be added in Figure 5C
-
-#2.Full and Null Models for Executive & Complex Reasoning Accuracy
-FullModel_pred_ECRA <- lm(F1_Exec_Comp_Res_Accuracy ~ Age + oSex + raw_num_bad_slices + mean_fd + V1+V2+V3+V4+V5+V6+V7+V8+V9+V10+V11+V12+V13+V14,
-                      data = df_fdc)
-
-NullModel_pred_ECRA <- lm(F1_Exec_Comp_Res_Accuracy ~  Age + oSex + raw_num_bad_slices + mean_fd,data = df_fdc)
-
-NMF_only_predict_ECRA <- lm(F1_Exec_Comp_Res_Accuracy ~  V1+V2+V3+V4+V5+V6+V7+V8+V9+V10+V11+V12+V13+V14,data=df_fdc)
-
-Full_pred_ECRA_summary<-summary(FullModel_pred_ECRA)
-Null_pred_ECRA_summary<-summary(NullModel_pred_ECRA)
-NMF_only_predict_ECRA_summary<-summary(NMF_only_predict_ECRA)
-Full_pred_ECRA_summary
-Null_pred_ECRA_summary
-
-#2a.Compare Fullmodel and Nullmodel with an F test to test significant contribution of networks in predicting ECRA
-Ftest_ECRA<-anova(FullModel_pred_ECRA,NullModel_pred_ECRA)
-Ftest_ECRA # significant contribution of the covariance networks in predicting EE
-
-#2b.Correlation between actual EE and predicted EE by NMF_only_predict_EE model
-NMF_ECRA_Cor <- cor.test(predict(NMF_only_predict_ECRA), df_fdc$F1_Exec_Comp_Res_Accuracy)
-NMF_ECRA_Cor 
-
 
 #########################################################################
 #### FIGURE 5C - CORRELATION PLOT BETWEEN PREDICTED EE AND ACTUAL EE ####
@@ -365,7 +303,7 @@ figureS4A<-ggplot(cog_stats_TBV_order, aes(x=bundles, y=partialR2, fill=bundles)
   geom_bar(stat="identity") + 
   scale_fill_manual("Processing Method", 
                     values = c("Body of the CC" = "#F77F85", 
-                               "SLF" = "#008B45", 
+                               "SLF, arcuate" = "#008B45", 
                                "Splenium" = "#EE3B3B", 
                                "Fornix, cingulum" = "#4169E1", 
                                "Sup. CST" = "#9CB9F5", 
@@ -467,7 +405,7 @@ figureS4B<-ggplot(cog_stats_ME_order, aes(x=bundles, y=partialR2, fill=bundles))
   geom_bar(stat="identity") + 
   scale_fill_manual("Processing Method", 
                     values = c("Body of the CC" = "#F77F85", 
-                               "SLF" = "#008B45", 
+                               "SLF, arcuate" = "#008B45", 
                                "Splenium" = "#EE3B3B", 
                                "Fornix, cingulum" = "#4169E1", 
                                "Sup. CST" = "#9CB9F5", 
@@ -492,7 +430,6 @@ figureS4B<-ggplot(cog_stats_ME_order, aes(x=bundles, y=partialR2, fill=bundles))
         legend.text = element_text(size=20), 
         legend.title = element_text(size = 24), 
         plot.title = element_text(face="bold",size = 20)) + 
-  # scale_y_continuous(breaks=c(0,0.005,0.01,0.015)) +
   scale_y_continuous(breaks=c(0,0.01,0.02,0.03,0.04,0.05,0.06)) +
   theme(plot.title = element_text(hjust = 0.5))
 figureS4B

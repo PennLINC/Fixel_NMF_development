@@ -84,6 +84,9 @@ ConFixel (https://github.com/PennLINC/ConFixel) and Brainparts (https://github.c
 -Makes the paper's figures.  
 -Sensitivity analyses for the executive functioning effects (controlling for Total Brain Volume).
 
+### plotting_functions.R
+This script contains plotting functions needed to generate scatterplots and age related changes for figures 4 and 5 of the manuscript.
+
 ### Software Utilized for GAMs and Figures
 MRtrix and MRtrix visualization tool - MRview (https://mrtrix.readthedocs.io/en/latest/), and a ton of R packages inclding mgcv, ggplot2, cowplot, dplyr, gratia, svglite.
 
