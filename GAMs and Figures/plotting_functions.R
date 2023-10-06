@@ -144,7 +144,7 @@ get_derivs_and_plot <- function(modobj, smooth_var, low_color = NULL, hi_color =
   nmf_network <- all.vars(modobj$formula)[1]
   
   # get model derivatives
-  derv <- derivatives(modobj, term = smooth_var, interval = "simultaneous", unconditional = F)
+  derv <- derivatives(modobj, term = smooth_var, interval = "confidence", unconditional = F) # from gratia. "confidence" for point-wise intervals
   
   # add significance variable (true or false)
   derv <- derv %>%

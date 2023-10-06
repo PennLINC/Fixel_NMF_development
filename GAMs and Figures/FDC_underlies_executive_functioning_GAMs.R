@@ -91,6 +91,10 @@ cog_stats<-cog_stats[order(-cog_stats$partialR2_EE),]
 ##############################################################################################
 #Considering very similar results between EE and ECRA, in the paper we only presents results pertaining to the EE analysis (in Figure 5)
 library(ggplot2)
+
+# path to save figures at
+root <- "path/to/project"
+
 cog_stats$bundles <- factor(cog_stats$bundles, levels = cog_stats$bundles)
 figure5b <- ggplot(cog_stats, aes(x=bundles, y=partialR2_EE, fill=bundles)) + 
   geom_bar(stat="identity") + scale_fill_manual("Processing Method", values = c("Body of the CC" = "#F77F85", 
@@ -222,7 +226,7 @@ ef_plots <- function(p){
 # Association between EE and Fornix, cingulum (i.e.,V2)
 # Association between EE and SLF (parietal) (i.e.,V10)
 # Association between EE and SLF (i.e.,V5)
-source(paste0(root, "/GAMs and Figures/plotting_functions.R"))
+source(paste0(root, "./GAMs and Figures/plotting_functions.R"))
 ef_plots_list <- lapply(X = gamModels_EE[c(2,10,5)], FUN = resid_plot, term = "F3_Executive_Efficiency", add.intercept = TRUE)
 ggsave(plot = ef_plots_list[[1]], filename = paste0(root, "figures/Figure5D_EE_V2.pdf"), device = "pdf",width = 320, height = 220,units = "mm")# Print the saved plot to the rmarkdown document (optional)
 ggsave(plot = ef_plots_list[[2]], filename = paste0(root, "figures/Figure5D_EE_V10.pdf"), device = "pdf",width = 320, height = 220,units = "mm")# Print the saved plot to the rmarkdown document (optional)
@@ -288,8 +292,8 @@ partialR2_EE_TBV<-partialR2_EE_TBV %>%
 
 #Merge Partial R2 values with F-stats and p-values
 cog_stats_TBV<-cbind(cog_stats_TBV,partialR2_EE_TBV)
-cog_stats_TBV$partialR2<-as.numeric(as.character(cog_stats_TBV$partialR2))
-cog_stats_TBV_order<-cog_stats_TBV[order(-cog_stats_TBV$partialR2),]
+cog_stats_TBV$partialR2_EE_TBV<-as.numeric(as.character(cog_stats_TBV$partialR2_EE_TBV))
+cog_stats_TBV_order<-cog_stats_TBV[order(-cog_stats_TBV$partialR2_EE_TBV),]
 
 cog_stats_all<-left_join(cog_stats,cog_stats_TBV, by="bundles")
 colnames(cog_stats_all)
@@ -299,23 +303,23 @@ cog_stats_save<-cog_stats_all%>%
 
 ##Bar plot of EE partial R2 while controlling for TBV
 cog_stats_TBV_order$bundles <- factor(cog_stats_TBV_order$bundles, levels = cog_stats_TBV_order$bundles)
-figureS4A<-ggplot(cog_stats_TBV_order, aes(x=bundles, y=partialR2, fill=bundles)) + 
+figureS4A<-ggplot(cog_stats_TBV_order, aes(x=bundles, y=partialR2_EE_TBV, fill=bundles)) + 
   geom_bar(stat="identity") + 
   scale_fill_manual("Processing Method", 
                     values = c("Body of the CC" = "#F77F85", 
-                               "SLF, arcuate" = "#008B45", 
-                               "Splenium" = "#EE3B3B", 
-                               "Fornix, cingulum" = "#4169E1", 
-                               "Sup. CST" = "#9CB9F5", 
-                               "Inf. CST" = "#6E91EB", 
-                               "U-fibers" = "#9CCBB3", 
-                               "Rostrum" = "#FFB6C1", 
-                               "SLF (parietal)" = "#D0E0D8", 
-                               "Uncinate" = "#4EAB7C", 
-                               "Sup. Cerebellum" = "#F7EAAA", 
-                               "Vermis" = "#F3D370", 
-                               "Int. capsule" = "#CAE1FF", 
-                               "Middle CP" = "#EEB422")) + 
+                    "SLF, arcuate" = "#008B45", 
+                    "Splenium" = "#EE3B3B", 
+                    "Fornix, cingulum" = "#42DFCE", 
+                    "Sup. CST" = "#9CB9F5", 
+                    "Inf. CST" = "#6E91EB", 
+                    "U-fibers" = "#9CCBB3", 
+                    "Rostrum" = "#FFB6C1", 
+                    "SLF (parietal)" = "#D0E0D8", 
+                    "Uncinate" = "#4EAB7C", 
+                    "Sup. Cerebellum" = "#F7EAAA", 
+                    "Vermis" = "#F3D370", 
+                    "Int. capsule" = "#CAE1FF", 
+                    "Middle CP" = "#EEB422")) + 
   labs(x = "Covariance Networks", y = expression(paste("EF Partial ", R^2))) + 
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(), 
@@ -390,8 +394,8 @@ partialR2_EE_ME<-partialR2_EE_ME %>%
 
 #Merge Partial R2 values with F-stats and p-values
 cog_stats_ME<-cbind(cog_stats_ME,partialR2_EE_ME)
-cog_stats_ME$partialR2<-as.numeric(as.character(cog_stats_ME$partialR2))
-cog_stats_ME_order<-cog_stats_ME[order(-cog_stats_ME$partialR2),]
+cog_stats_ME$partialR2_EE_ME<-as.numeric(as.character(cog_stats_ME$partialR2_EE_ME))
+cog_stats_ME_order<-cog_stats_ME[order(-cog_stats_ME$partialR2_EE_ME),]
 
 cog_stats_all<-left_join(cog_stats,cog_stats_ME, by="bundles")
 colnames(cog_stats_all)
@@ -401,13 +405,13 @@ cog_stats_save<-cog_stats_all%>%
 
 ##Bar plot of EE partial R2 while controlling for Maternal education
 cog_stats_ME_order$bundles <- factor(cog_stats_ME_order$bundles, levels = cog_stats_ME_order$bundles)
-figureS4B<-ggplot(cog_stats_ME_order, aes(x=bundles, y=partialR2, fill=bundles)) + 
+figureS4B<-ggplot(cog_stats_ME_order, aes(x=bundles, y=partialR2_EE_ME, fill=bundles)) + 
   geom_bar(stat="identity") + 
   scale_fill_manual("Processing Method", 
                     values = c("Body of the CC" = "#F77F85", 
                                "SLF, arcuate" = "#008B45", 
                                "Splenium" = "#EE3B3B", 
-                               "Fornix, cingulum" = "#4169E1", 
+                               "Fornix, cingulum" = "#42DFCE", 
                                "Sup. CST" = "#9CB9F5", 
                                "Inf. CST" = "#6E91EB", 
                                "U-fibers" = "#9CCBB3", 
@@ -434,4 +438,5 @@ figureS4B<-ggplot(cog_stats_ME_order, aes(x=bundles, y=partialR2, fill=bundles))
   theme(plot.title = element_text(hjust = 0.5))
 figureS4B
 ggsave(plot = figureS4B,filename = paste0(root, "figures/figureS4B_bargraph_partialR2_EE_sensitivity_ME.pdf"), device = "pdf",width = 200,height = 210,units = "mm")# Print the saved plot to the rmarkdown document (optional)
+
 

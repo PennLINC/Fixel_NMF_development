@@ -20,60 +20,12 @@ library(olsrr)
 ######################
 #### READ IN DATA ####
 ######################
+
 # root
-root <- "/path/to/project/"
+root <- "./data/"
 
-#load components data
-fdc <- read.csv(paste0(root, "GAMs/input_data/14comp_loadings_fdc_ltn.csv"), header=F)
-bblids<-read.csv(paste0(root, "nmf/mif_h5/cohort_files/ltn_FDC.csv"),header=T)
-
-#load in-scanner QC data
-QC <- read.csv(paste0(root, "/GAMs/input_data/QC_measures.csv"), header=T, sep=",")
-
-#load behavioral data
-# demos <- read.csv("/cbica/projects/GURLAB/dataFreezes/n1601_dataFreeze/demographics/n1601_demographics_go1_20161212.csv")
-demo <- read.csv(paste0(root, "GAMs/input_data/n1601_demographics_go1_20161212.csv"))
-
-#load cognitive data
-cnb_tm <- read.csv(paste0(root, "GAMs/input_data/n1601_cnb_factor_scores_tymoore_20151006.csv"))
-
-#load TBV data
-TBV <- read.csv(paste0(root, "GAMs/input_data/n1601_ctVol20170412.csv"))
-
-#######################
-#### ORGANIZE DATA ####
-#######################
-bblids <- bblids%>%
-  dplyr::rename(bblid = subject)
-
-comp_fdc <- cbind(bblids$bblid,fdc)
-#Rename variable correctly
-comp_fdc <- comp_fdc%>%
-  dplyr::rename(bblid = 'bblids$bblid')
-
-#Just keep necessary variables
-TBV <- TBV %>%
-  dplyr::select(bblid,mprage_antsCT_vol_TBV) %>%
-  rename(TBV = mprage_antsCT_vol_TBV)
-
-colnames(cnb_tm)
-cog <- cnb_tm %>%
-  dplyr::select(bblid,F1_Exec_Comp_Res_Accuracy,F3_Executive_Efficiency)
-
-#Make sex an ordered variable and age in years
-demo <- demo%>%
-  mutate(oSex = sex) %>%
-  mutate(Age = ageAtScan1/12)
-demo$oSex <- ordered(demo$oSex)
-
-#Join dataframes
-df_fdc <- left_join(comp_fdc, demo, by = "bblid")
-df_fdc <- left_join(df_fdc, QC, by = "bblid")
-df_fdc <- left_join(df_fdc, cog, by = "bblid")
-df_fdc <- left_join(df_fdc, TBV, by = "bblid")
-
-library(skimr)
-skim(df_fdc)
+# load df_fdc
+df_fdc <- read.csv(paste0(root, "df_fdc.csv"))
 
 #Get components numbering
 comp_names<-df_fdc %>%
@@ -85,16 +37,6 @@ createInteger <- function(f) {
 }
 comp_names <- as.data.frame(mapply(createInteger,comp_names))
 
-#Check and remove missings for GAMs
-sum(is.na(df_fdc$Age))
-df_fdc <- df_fdc %>%
-  filter(!is.na(Age)) %>%
-  filter(!is.na(F1_Exec_Comp_Res_Accuracy)) %>%
-  filter(!is.na(mean_fd)) %>%
-  filter(!is.na(raw_num_bad_slices))
-
-### FINAL SAMPLE FOR GAMs  IS N=939 (LOST N=2 DUE TO MISSING COGNITIVE DATA) ###
-  
 #List components' name
 bundles <- c("Splenium","Fornix, cingulum","Inf. CST","Int. capsule","SLF, arcuate","Body of the CC","Rostrum","Sup. CST","Uncinate","SLF (parietal)","Middle CP",
            "Vermis","Sup. Cerebellum","U-fibers")
@@ -207,7 +149,7 @@ age_gam <- age_gam[order(-age_gam$partial_R2),]
 #### FIGURE 3B - BAR PLOT OF PARTIAL R2 FOR EACH COVARIANCE NETWORK ####
 ########################################################################
 # path to save figures at
-root <- "path/to/project"
+root <- "/path/to/project/"
 
 #First find colors similar to Figure 2 which depicts the 14 covariance networks on the brain
 # Define the color ramp (returns a function object)
@@ -327,7 +269,7 @@ ggsave(plot = figure3c, filename = paste0(root, "figures/Figure3C_NMF_predicted_
 this_font_size = 50
 
 # apply scatterplot and barplot functions to models
-source(paste0(root, "/GAMs and Figures/plotting_functions.R"))
+source("./GAMs and Figures/plotting_functions.R")
 dev_plots_list <- lapply(X = gamModels_age_fdc, FUN = resid_plot, term = "Age", add.intercept = TRUE)
 bar_plots_list <- lapply(X = gamModels_age_fdc, FUN = get_derivs_and_plot, smooth_var = "s(Age)")
 
@@ -357,6 +299,7 @@ gamModels_age_fdc_TBV <- lapply(Components, function(x) {
 
 #Look at model summaries
 models_age_fdc_TBV <- lapply(gamModels_age_fdc_TBV, summary)
+# models_age_fdc_TBV[[1]]
 
 ## MAIN EFFECT OF AGE WITH TBV ##
 #Pull F-statistics
@@ -420,7 +363,7 @@ figureS3A <- ggplot(age_gam_TBV, aes(x = bundles, y = partialR2, fill = bundles)
                     values = c("Body of the CC" = "#F77F85", 
                                "SLF, arcuate" = "#008B45", 
                                "Splenium" = "#EE3B3B", 
-                               "Fornix, cingulum" = "#4169E1", 
+                               "Fornix, cingulum" = "#42DFCE", 
                                "Sup. CST" = "#9CB9F5", 
                                "Inf. CST" = "#6E91EB", 
                                "U-fibers" = "#9CCBB3", 
@@ -522,7 +465,7 @@ figureS3B <- ggplot(age_gam_ME, aes(x = bundles, y = partialR2, fill = bundles))
                                                 values = c("Body of the CC" = "#F77F85", 
                                                            "SLF, arcuate" = "#008B45", 
                                                            "Splenium" = "#EE3B3B", 
-                                                           "Fornix, cingulum" = "#4169E1", 
+                                                           "Fornix, cingulum" = "#42DFCE", 
                                                            "Sup. CST" = "#9CB9F5", 
                                                            "Inf. CST" = "#6E91EB", 
                                                            "U-fibers" = "#9CCBB3", 
@@ -551,6 +494,5 @@ figureS3B <- ggplot(age_gam_ME, aes(x = bundles, y = partialR2, fill = bundles))
 figureS3B
 ggsave(plot = figureS3B,filename = paste0(root, "figures/FigureS3B_bargraph_partialR2_sensitivity_ME.pdf"), device = "pdf",
        width = 210,height = 200,units = "mm")
-
 
 

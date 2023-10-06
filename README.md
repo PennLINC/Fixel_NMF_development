@@ -12,6 +12,14 @@ Details below.
 
 This project includes typically-developing PNC participants - LTN criteria were used. Refer to Sample_creation.R for how the sample was selected and for the list of bblids.
 
+Additionally, this repository contains the following **data**: 
+
+*  **df_fdc.csv**: a dataframe containing all necessary data to run statistical analyses (GAMs and Figures scripts). This includes the coefficient matrix (H) generated using NMF, which contains individual participant scores in each of the fiber covariance networks.
+
+* **W_ltn_FDC_14comp.h5**: an h5 file containing the output factorization matrix (W) generated using NMF, which contains fixel loadings in each of the fiber covariance networks. 
+
+* **wmfod_template.mif**: the study-specific FOD template generated using Preprocessing scripts. 
+
 # Preprocessing
 
 ### 0.Run_QSIPrep
