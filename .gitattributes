@@ -1,0 +1,2 @@
+data/W_ltn_FDC_14comp.h5 filter=lfs diff=lfs merge=lfs -text
+data/wmfod_template.mif filter=lfs diff=lfs merge=lfs -text
