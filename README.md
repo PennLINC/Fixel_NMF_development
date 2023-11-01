@@ -1,3 +1,6 @@
+[![DOI](https://zenodo.org/badge/578251374.svg)](https://zenodo.org/doi/10.5281/zenodo.10064923)
+
+
 # Fixel_NMF_development
 
 This repository is divided into three sets of scripts:
